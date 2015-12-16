@@ -71,6 +71,12 @@ int checker(long DATE) {
             } else {
               currentValue = 1;
             }
+            Serial.print("lastEvent already happened: ");
+            Serial.print(lastEvent);
+            Serial.print(" : ");
+            Serial.println(horizonTimeLong);
+            Serial.print("currentValue is ");
+            Serial.println(currentValue);
         }
     }
     

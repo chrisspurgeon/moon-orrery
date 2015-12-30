@@ -108,11 +108,11 @@ void setup()
     // Change these values to what you want to set your clock to.
     // You probably only want to set your clock once and then remove
     // the setDateDs1307 call.
-    second = 50;
-    minute = 38;
-    hour = 19;
-    dayOfWeek = 3;
-    dayOfMonth = 15;
+    second = 45;
+    minute = 33;
+    hour = 03;
+    dayOfWeek = 4;
+    dayOfMonth = 16;
     month = 12;
     year = 15;
     setDateDs1307(second, minute, hour, dayOfWeek, dayOfMonth, month, year);

@@ -1,3 +1,47 @@
+/*
+
+Arduino program to drive a servo motor indicating when the moon is above the horizon in Philadelphia, PA (39°57′N 75°10′W).
+All time values are in UTC.
+
+*/
+
+
+#include "String.h"
+#include "Wire.h"
+#include "Servo.h"
+#include <avr/pgmspace.h>
+
+
+#define DS1307_I2C_ADDRESS 0x68
+#define ledPin 13
+
+int lastSecond = 0;
+int pos = 0;
+int UP = 140;
+int DOWN = 44;
+
+Servo myservo;
+
+long convertedDate;
+long lastEvent;
+unsigned long horizonTimeLong;
+
+int moonLength = 6018;    //    This is the number of data entries in the moon array below;
+
+int MOON = 0;
+int previousMoon = 0;
+
+
+// The data entries below capture when the moon dips below the horion and when it rises above the horizon.
+// The array begins with a moon set and then alternates between moon sets and moon rises. Each entry is a time stamp in this format: YYMMDDHHMM. 
+// So if the moon rises on July 4th, 12 at 9:42AM, the entry would look like this...
+//                                          1207040942
+// ... and be at an ODD index in the array.
+
+const PROGMEM uint32_t moon[]={
+
+
+// position 0 is always zero!
 1607251545,1607260336,1607261654,1607270413,1607271804,1607280452,1607281912,1607290537,1607292018,1607300626,1607302119,1607310721,
 1607312215,1608010821,1608012305,1608020923,1608022348,1608031027,1608040026,1608041130,1608050059,1608051231,1608060130,1608061331,1608070159,
 1608071430,1608080228,1608081528,1608090257,1608091625,1608100327,1608101721,1608110400,1608111818,1608120437,1608121913,1608130518,1608132007,
@@ -461,4 +505,202 @@
 2501132109,2501141304,2501142221,2501151335,2501152332,2501161400,2501170040,2501171420,2501180145,2501181439,2501190248,2501191456,2501200349,
 2501201514,2501210451,2501211533,2501220554,2501221555,2501230659,2501231622,2501240805,2501241655,2501250911,2501251737,2501261012,2501261831,
 2501271106,2501271936,2501281151,2501282049,2501291227,2501292206,2501301256,2501302323,2501311322,2502010040,2502011344,2502020156,2502021406
+
+
+
+
+
+};
+
+
+int checker(long DATE) {
+    Serial.println("Inside checker()");
+    int currentValue = 0;
+    int i;
+    for (i=0; i < moonLength; i++) {
+        horizonTimeLong = pgm_read_dword_near(moon + i);
+        Serial.print("moon array index number ");
+        Serial.print(i);
+        Serial.print( " is ");
+        Serial.println(horizonTimeLong);
+        if (horizonTimeLong <= DATE) {
+            lastEvent = horizonTimeLong;
+            if (i % 2 == 0) {
+              currentValue = 0;
+            } else {
+              currentValue = 1;
+            }
+            Serial.print("lastEvent already happened: ");
+            Serial.print(lastEvent);
+            Serial.print(" : ");
+            Serial.println(horizonTimeLong);
+            Serial.print("currentValue is ");
+            Serial.println(currentValue);
+        } else {
+          break;
+        }
+    }
+    
+    return currentValue;
+
+}
+
+// Convert normal decimal numbers to binary coded decimal
+byte decToBcd(byte val)
+{
+    return ( (val/10*16) + (val%10) );
+}
+
+// Convert binary coded decimal to normal decimal numbers
+byte bcdToDec(byte val)
+{
+    return ( (val/16*10) + (val%16) );
+}
+
+// Convert binary coded decimal to normal decimal numbers
+long bcdToLong(byte val)
+{
+    return ( (val/16*10) + (val%16) );
+}
+
+
+
+// Gets the date and time from the ds1307
+void getDateDs1307(long *second,
+long *minute,
+long *hour,
+long *dayOfWeek,
+long *dayOfMonth,
+long *month,
+long *year)
+{
+
+    // Reset the register pointer
+    Wire.beginTransmission(DS1307_I2C_ADDRESS);
+    Wire.write(0);
+    Wire.endTransmission();
+    Wire.requestFrom(DS1307_I2C_ADDRESS, 7);
+
+    // A few of these need masks because certain bits are control bits
+    *second     = bcdToLong(Wire.read() & 0x7f);
+    *minute     = bcdToLong(Wire.read());
+    *hour       = bcdToLong(Wire.read() & 0x3f);  // Need to change this if 12 hour am/pm
+    *dayOfWeek  = bcdToLong(Wire.read());
+    *dayOfMonth = bcdToLong(Wire.read());
+    *month      = bcdToLong(Wire.read());
+    *year       = bcdToLong(Wire.read());
+}
+
+
+
+
+void setup() {
+
+
+    myservo.attach(9);
+
+    delay(5000);
+
+    pinMode(ledPin, OUTPUT);
+    Serial.begin(9600); 
+    Wire.begin();
+    Serial.println("Moon orrery for Glendale, CA.");
+    Serial.println("Starting...");
+
+    myservo.write(DOWN);
+    Serial.println("Servo should be DOWN");
+    delay(2000);
+    myservo.write(UP);
+    Serial.println("Servo should be UP");
+    delay(2000);
+    myservo.write(DOWN);
+    Serial.println("Servo should be DOWN");
+    delay(2000);
+    myservo.write(UP);
+    Serial.println("Servo should be UP");
+    delay(2000);
+    myservo.write(DOWN);
+    Serial.println("Servo should be DOWN");
+    delay(2000);
+
+
+
+}
+
+void loop() {
+  
+  Serial.println("In the loop...");
+  if (myservo.attached()) {
+    Serial.println("Right now the servo is attached.");
+  } else {
+    Serial.println("Right now the servo is NOT attached.");
+  }
+    long second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+
+    getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);
+
+    Serial.print(hour, DEC);
+    Serial.print(":");
+    if (minute < 10) {
+        Serial.print("0");
+    }
+    Serial.print(minute, DEC);
+    Serial.print(":");
+    if (second < 10) {
+        Serial.print("0");
+    }
+    Serial.print(second, DEC);
+    Serial.print("  ");
+    Serial.print(month, DEC);
+    Serial.print("/");
+    if (dayOfMonth < 10) {
+        Serial.print("0");
+    }
+    Serial.print(dayOfMonth, DEC);
+    Serial.print("/");
+    Serial.print(year + 2000, DEC);
+    Serial.print("  Day_of_week:");
+    Serial.println(dayOfWeek, DEC);
+
+    //7 12 16 33
+
+    convertedDate = year * 100000000;
+    convertedDate = convertedDate + (month * 1000000);
+    convertedDate = convertedDate + (dayOfMonth * 10000);
+    convertedDate = convertedDate + (hour * 100);
+    convertedDate = convertedDate + (minute);
+    Serial.print("Current time is ");
+    Serial.println(convertedDate);
+
+
+    MOON = checker(convertedDate);
+    Serial.print("Last event was  ");
+    Serial.print(lastEvent);
+    Serial.print(" and the current time is ");
+    Serial.println(convertedDate);
+    Serial.print("I think the moon should be ");
+    Serial.println(MOON);
+    Serial.println();
+
+    if (MOON == previousMoon) {
+      if(myservo.attached()) {
+        myservo.detach();
+        Serial.println("servo should be detatched.");
+      }
+    } else {
+      myservo.attach(9);
+      if (MOON == 0) {
+          myservo.write(DOWN);
+      } 
+      else {
+          myservo.write(UP);
+      }
+      previousMoon = MOON;
+    }
+
+    delay(5000);
+
+}
+
+
 

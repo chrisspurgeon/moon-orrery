@@ -20,7 +20,7 @@ This code is available at https://github.com/chrisspurgeon/Hannah_orrery
 
 int lastSecond = 0;
 int pos = 0;
-int UP = 170;
+int UP = 200;
 int DOWN = 85;
 
 Servo myservo;
@@ -141,7 +141,7 @@ void setup() {
     delay(5000);
 
     pinMode(ledPin, OUTPUT);
-    Serial.begin(9600); 
+    Serial.begin(57600); 
     Wire.begin();
     Serial.println("Moon orrery for PHILADELPHIA, PA");
     Serial.println("Starting...");
@@ -223,7 +223,7 @@ void loop() {
         myservo.write(UP);
     }
 
-    delay(5000);
+    delay(15000);
 
 }
 

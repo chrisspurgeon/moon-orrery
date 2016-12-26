@@ -18,20 +18,22 @@ difference() {
 }
 
 color("red")
-translate([-4,4,7])
-cube([25,6,2]);
+translate([-4,4,6])
+cube([25,6,3]);
 
 rotate([0,90,0])
 
 translate([-11,8,-3])
 difference() {
     color("green")
-    cylinder(d=7,h=5);
+    cylinder(d=7,h=24);
     translate([0,0,-0.01])
-    cylinder(d=2.35,h=5.1);
+    cylinder(d=2.35,h=25.1);
 }
 
 
+
+/*
 rotate([0,90,0])
 translate([-11,8,15])
 difference() {
@@ -39,4 +41,4 @@ difference() {
     cylinder(d=7,h=5);
     translate([0,0,-0.01])
     cylinder(d=2.35,h=5.1);
-}
+}*/
